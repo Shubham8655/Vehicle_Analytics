@@ -8,8 +8,10 @@ import threading
 import time
 import uuid
 from datetime import datetime, timezone
+from collections.abc import Callable
 
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from .database import DetectionEvent, SessionLocal
 
@@ -17,8 +19,9 @@ logger = logging.getLogger(__name__)
 
 
 class EventWriter:
-    def __init__(self, max_queue_size: int = 2000):
+    def __init__(self, max_queue_size: int = 2000, session_factory: Callable[[], Session] = SessionLocal):
         self.queue: queue.Queue[dict | None] = queue.Queue(maxsize=max_queue_size)
+        self.session_factory = session_factory
         self.thread: threading.Thread | None = None
         self.stop_event = threading.Event()
         self.dropped_events = 0
@@ -59,7 +62,7 @@ class EventWriter:
                 self.queue.task_done()
                 continue
             try:
-                with SessionLocal() as session:
+                with self.session_factory() as session:
                     session.add(DetectionEvent(**item))
                     session.commit()
                 self.persisted_events += 1

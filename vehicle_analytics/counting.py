@@ -16,20 +16,19 @@ class LineCounter:
         self.line_y = line_y
         self.session_id = session_id
         self.deadband = deadband
-        self.previous_y: dict[int, int] = {}
+        self.sides: dict[int, int] = {}
         self.counted: set[int] = set()
 
     def update(self, track_id: int, center_y: int) -> Crossing | None:
-        previous = self.previous_y.get(track_id)
-        self.previous_y[track_id] = center_y
-        if track_id in self.counted or previous is None:
+        if track_id in self.counted:
             return None
-        direction = None
-        if previous < self.line_y - self.deadband and center_y >= self.line_y + self.deadband:
-            direction = "down"
-        elif previous > self.line_y + self.deadband and center_y <= self.line_y - self.deadband:
-            direction = "up"
-        if direction is None:
+        current_side = -1 if center_y < self.line_y - self.deadband else 1 if center_y > self.line_y + self.deadband else 0
+        previous_side = self.sides.get(track_id)
+        if current_side == 0:
+            return None
+        self.sides[track_id] = current_side
+        if previous_side is None or previous_side == current_side:
             return None
         self.counted.add(track_id)
+        direction = "down" if previous_side < current_side else "up"
         return Crossing(vehicle_id=f"{self.session_id}:{track_id}", direction=direction)
