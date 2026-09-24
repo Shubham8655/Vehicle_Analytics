@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="5">
+  <title>Elansol | Vehicle Analytics</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1020;--panel:#111a2e;--line:#22304b;--muted:#91a0ba;--text:#eef3fc;--accent:#59d5bd;--blue:#71a7ff}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 85% 0,#16294a 0,transparent 42%),var(--bg);color:var(--text);font:15px/1.5 Inter,Segoe UI,Arial,sans-serif}
+    main{max-width:1180px;margin:auto;padding:38px 28px 56px}.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}.brand{font-size:12px;letter-spacing:.16em;color:var(--accent);font-weight:700;text-transform:uppercase}.top h1{font-size:28px;margin:5px 0}.status{border:1px solid var(--line);border-radius:30px;padding:8px 13px;color:var(--muted);font-size:13px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;background:#f5bd55}.running .dot{background:var(--accent);box-shadow:0 0 12px var(--accent)}
+    .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}.card,.panel{background:linear-gradient(145deg,rgba(20,31,54,.96),rgba(14,22,39,.96));border:1px solid var(--line);border-radius:15px}.card{padding:20px}.label{color:var(--muted);font-size:13px}.value{font-size:31px;font-weight:700;margin-top:6px;letter-spacing:-.04em}.sub{font-size:12px;color:#8190aa;margin-top:5px}.layout{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.panel{padding:21px;min-width:0}.panel h2{font-size:16px;margin:0 0 17px}.color-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.color{padding:13px;border:1px solid var(--line);border-radius:11px;background:#0c1425}.color strong{display:block;font-size:20px;margin-top:4px}.pill{display:inline-block;border-radius:12px;width:8px;height:8px;margin-right:7px}.blue{background:#6795ff}.green{background:#59d5bd}.yellow{background:#f5bd55}.purple{background:#b691ff}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse;text-align:left;font-size:13px;white-space:nowrap}th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;padding:0 10px 11px}td{border-top:1px solid var(--line);padding:12px 10px;color:#d7dfed}.tag{background:#1b2a43;border-radius:12px;padding:4px 8px;font-size:11px}.empty{color:var(--muted);padding:18px 0}.foot{margin-top:18px;color:#73819a;font-size:12px;display:flex;justify-content:space-between}.error{color:#ff9c9c}
+    @media(max-width:800px){.metrics{grid-template-columns:repeat(2,1fr)}.layout{grid-template-columns:1fr}.top{align-items:flex-start;gap:12px;flex-direction:column}}@media(max-width:420px){main{padding:24px 15px}.metrics{gap:9px}.card{padding:15px}.value{font-size:26px}.color-grid{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body><main>
+  <header class="top"><div><div class="brand">Elansol · Vision Engineering</div><h1>Vehicle analytics</h1></div><div class="status {{ 'running' if pipeline.status == 'running' else '' }}"><span class="dot"></span>{{ pipeline.status|replace('_',' ')|title }} · {{ pipeline.source }}</div></header>
+  <section class="metrics" aria-label="Live metrics">
+    <article class="card"><div class="label">Vehicles counted</div><div class="value">{{ stats.total }}</div><div class="sub">All recorded line crossings</div></article>
+    <article class="card"><div class="label">Today</div><div class="value">{{ stats.today }}</div><div class="sub">Crossings since midnight (UTC)</div></article>
+    <article class="card"><div class="label">Frames analyzed</div><div class="value">{{ pipeline.frames_processed }}</div><div class="sub">Current pipeline session</div></article>
+    <article class="card"><div class="label">Events waiting to save</div><div class="value">{{ queue_depth }}</div><div class="sub">Background database writer</div></article>
+  </section>
+  {% if pipeline.error %}<section class="panel error" style="margin-bottom:16px">Pipeline error: {{ pipeline.error }}</section>{% endif %}
+  <section class="layout">
+    <article class="panel"><h2>Vehicle colors</h2><div class="color-grid">
+      {% for color, count in stats.colors.items() %}<div class="color"><span class="label"><span class="pill {{ ['blue','green','yellow','purple'][loop.index0 % 4] }}"></span>{{ color|title }}</span><strong>{{ count }}</strong></div>{% endfor %}
+    </div><div class="foot"><span>Session {{ pipeline.session_id or 'starting' }}</span><span>Refreshes every 5 seconds</span></div></article>
+    <article class="panel"><h2>Recent crossings</h2><div class="table-wrap"><table><thead><tr><th>Time</th><th>Vehicle</th><th>Color</th><th>Direction</th></tr></thead><tbody>
+      {% for event in events %}<tr><td>{{ event.crossed_at.strftime('%H:%M:%S') if event.crossed_at else '—' }}</td><td><span class="tag">{{ event.vehicle_class }}</span></td><td>{{ event.color|title }}</td><td>{{ event.direction|title }}</td></tr>{% else %}<tr><td class="empty" colspan="4">No crossings yet. Events appear here when vehicles cross the line.</td></tr>{% endfor %}
+    </tbody></table></div><div class="foot"><span>{{ events|length }} latest events</span><span>{{ pipeline.model }}</span></div></article>
+  </section>
+  <footer class="foot"><span>Computer vision pipeline · COCO detector + ByteTrack</span><span>Database: {{ database_backend }}</span></footer>
+</main></body></html>
