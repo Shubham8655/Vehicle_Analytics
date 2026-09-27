@@ -47,7 +47,7 @@ py -3.11 -m venv .venv
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env
-python -m vehicle_analytics
+clear
 ```
 
 Open [http://127.0.0.1:8000](http://127.0.0.1:8000). The application starts the dashboard, database schema, background writer, and video pipeline. The first start downloads the configured YOLO model weights. The annotated output is written to `runs/annotated.mp4` by default.
@@ -55,9 +55,11 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000). The application starts the 
 Run with another video or camera:
 
 ```powershell
-$env:VIDEO_SOURCE = "D:\video\traffic.mp4"
+$env:VIDEO_SOURCE = "D:\Elansol project\Vehicle_Analytics\traffic.mp4"
 python -m vehicle_analytics
-```
+
+$env:KMP_DUPLICATE_LIB_OK="TRUE" " for duplicates error"
+``` 
 
 `VIDEO_SOURCE` accepts a file path, camera device number such as `0`, or a URL such as `rtsp://127.0.0.1:8554/traffic`. For a live camera, set `VIDEO_LOOP=false`.
 
